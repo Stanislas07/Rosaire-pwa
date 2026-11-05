@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Rosaire">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Mes Mystères du Rosaire</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #2c3e50;
+        }
+        .app-container {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            width: 100%;
+            max-width: 440px;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-size: 1.4rem;
+            color: #2c3e50;
+            text-align: center;
+            margin: 0 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f1f2f6;
+        }
+        .info-jour {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            background-color: #eef2f7;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        .assignment-section,
+        .prayer-section {
+            margin: 18px 0;
+        }
+        .language-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 14px 0;
+        }
+        .language-selector label {
+            font-weight: 600;
+        }
+        .language-selector select {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: white;
+            color: #2c3e50;
+            font: inherit;
+        }
+        .assignment-section h2,
+        .prayer-section h2 {
+            font-size: 1.05rem;
+            color: #d35400;
+            margin: 0 0 8px;
+        }
+        .assignment-section label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 12px 0 5px;
+        }
+        .assignment-section select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: white;
+            color: #2c3e50;
+            font: inherit;
+        }
+        .mystery-card {
+            background-color: #fffdf6;
+            border-left: 4px solid #f1c40f;
+            padding: 14px;
+            border-radius: 8px;
+            margin: 10px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .mystery-num {
+            font-weight: bold;
+            color: #b7791f;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .mystery-text {
+            font-size: 1.05rem;
+            line-height: 1.5;
+            margin-bottom: 6px;
+        }
+        .mystery-fruit {
+            font-size: 0.95rem;
+            font-style: italic;
+            color: #244f8f9f;
+            background-color: #f7fafc;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .daily-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: #eef2f7;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .daily-checkbox[hidden] {
+            display: none;
+        }
+        .daily-checkbox input {
+            width: 22px;
+            height: 22px;
+            accent-color: #e67e22;
+            cursor: pointer;
+        }
+        .empty-message {
+            color: #718096;
+            font-style: italic;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+ 
+    <div class="app-container">
+        <h1>🙏 Le Saint Chapelet</h1>
+        
+        <div id="info-jour" class="info-jour">Nous sommes ...</div>
+ 
+        <div class="language-selector">
+            <label id="language-label" for="language-select">Langue</label>
+            <select id="language-select">
+                <option value="fr">Français</option>
+                <option value="autre">Futunien</option>
+            </select>
+        </div>
+ 
+        <section class="assignment-section" aria-labelledby="assignment-title">
+            <h2 id="assignment-title">Mon mystère du mois</h2>
+            <label id="current-month-label" for="current-mystery">Mystère à prier ce mois-ci</label>
+            <select id="current-mystery"></select>
+ 
+            <label id="next-month-label" for="next-mystery">Mystère prévu pour le mois prochain</label>
+            <select id="next-mystery"></select>
+        </section>
+ 
+        <section class="prayer-section" aria-labelledby="prayer-title">
+            <h2 id="prayer-title">Mystère du mois</h2>
+            <div id="monthly-mystery"></div>
+            <label id="daily-prayer-label" class="daily-checkbox" for="daily-prayer" hidden>
+                <input id="daily-prayer" type="checkbox">
+                <span>J'ai prié ce mystère aujourd'hui</span>
+            </label>
+        </section>
+    </div>
+ 
+    <script>
+        const banqueRosaire = {
+            joyeux: {
+                titre: "Mystères Joyeux",
+                elements: [
+                    { id: "j1", num: "1er Mystère", texte: "L'Annonciation à Marie par l'ange Gabriel (Lc 1.26-38 ; Mt 1.18-25)", fruit: "l'humilité." },
+                    { id: "j2", num: "2è Mystère", texte: "La Visitation de Marie à sa cousine Elisabeth (Lc 1.39-55)", fruit: "la charité fraternelle." },
+                    { id: "j3", num: "3è Mystère", texte: "La Nativité de Jésus à Bethléem (Mt 2.1-12 ; Lc 2.1-20)", fruit: "l'esprit de pauvreté." },
+                    { id: "j4", num: "4è Mystère", texte: "La Présentation de Jésus nouveau-né au Temple (Lc 2.22-38)", fruit: "pureté et obéissance." },
+                    { id: "j5", num: "5è Mystère", texte: "Le Recouvrement de l'enfant Jésus au Temple (Lc 2.40-51)", fruit: "ferveur, réponse à l'appel de Dieu." }
+                ]
+            },
+            lumineux: {
+                titre: "Mystères Lumineux",
+                elements: [
+                    { id: "l1", num: "1er Mystère", texte: "Le Baptême de Jésus au Jourdain (Mt 3.13-17)", fruit: "l'état de grâce." },
+                    { id: "l2", num: "2è Mystère", texte: "Les noces de Cana (Jn 2.1-12)", fruit: "confiance en la volonté de Dieu." },
+                    { id: "l3", num: "3è Mystère", texte: "L'annonce du Royaume de Dieu avec l'invitation à la conversion (Mc 1.15)", fruit: "la conversion intérieure, la sainteté." },
+                    { id: "l4", num: "4è Mystère", texte: "La Transfiguration (Lc 9.28-36)", fruit: "la contemplation." },
+                    { id: "l5", num: "5è Mystère", texte: "L'institution de l'Eucharistie (Jn 13)", fruit: "la pratique des sacrements." }
+                ]
+            },
+            douloureux: {
+                titre: "Mystères Douloureux",
+                elements: [
+                    { id: "d1", num: "1er Mystère", texte: "L'Agonie de Jésus au Jardin des Oliviers (Mt 26.36-50 ; Mc 14.32-46 ; Lc 22.39-48 ; Jn 18.1-8)", fruit: "le regret de nos péchés (la contrition)." },
+                    { id: "d2", num: "2è Mystère", texte: "La Flagellation de Jésus (Mt 27.26 ; Mc 15.15 ; Jn 19.1)", fruit: "la mortification de nos sens et de notre corps." },
+                    { id: "d3", num: "3è Mystère", texte: "Le Couronnement d'épines (Mt 27.27-30 ; Mc 15.16-20 ; Jn 18.37 ; Jn 19.2-15)", fruit: "la mortification de nos pensées et de notre esprit." },
+                    { id: "d4", num: "4è Mystère", texte: "Le Portement de Croix (Mt 27.31-33 ; Mc 15.20-22 ; Lc 23.26-32 ; Jn 19.16-17)", fruit: "la patience dans les épreuves." },
+                    { id: "d5", num: "5è Mystère", texte: "Le Crucifiement et la mort de Jésus sur la croix (Mt 27.34-61 ; Mc 15.23-47 ; Lc 23.33-56 ; Jn 19.18-42)", fruit: "un amour plus grand pour Jésus, mort pour nous sauver." }
+                ]
+            },
+            glorieux: {
+                titre: "Mystères Glorieux",
+                elements: [
+                    { id: "g1", num: "1er Mystère", texte: "La Résurrection de Jésus (Mt 28.1-15 ; Mc 16.1-18 ; Lc 24.1-12 ; Jn 20.1-28)", fruit: "la foi." },
+                    { id: "g2", num: "2è Mystère", texte: "L'Ascension de Jésus au ciel (Lc 24.39-53 ; Mc 16.19-20 ; Ac 1.6-9)", fruit: "l'espérance et le désir du Ciel." },
+                    { id: "g3", num: "3è Mystère", texte: "L'effusion du Saint Esprit au jour de la Pentecôte (Ac 1.14 – 2.47)", fruit: "la descente du Saint-Esprit dans nos âmes." },
+                    { id: "g4", num: "4è Mystère", texte: "La Dormition et l'Assomption de Marie au ciel (2 R 2.11)", fruit: "la grâce d'une bonne mort" },
+                    { id: "g5", num: "5è Mystère", texte: "Le Couronnement de Marie dans le ciel (Ap 12.1)", fruit: "une plus grande dévotion dans la Vierge Marie." }
+                ]
+            }
+        };
+ 
+        const textesInterface = {
+            fr: {
+                langue: 'Langue',
+                titre: '🙏 Le Saint Chapelet',
+                assignmentTitle: 'Mon mystère du mois',
+                currentLabel: 'Mystère à prier en',
+                nextLabel: 'Mystère prévu pour',
+                prayerTitle: 'Mystère du mois',
+                dailyPrayer: 'J\'ai prié ce mystère aujourd\'hui',
+                chooseMystery: 'Choisir un mystère…',
+                emptyMessage: 'Choisissez le mystère que vous prierez chaque jour ce mois-ci.',
+                fruit: 'Fruit du mystère : ',
+                today: '📅 Aujourd\'hui :',
+                mois: [
+                    'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+                    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+                ],
+                jours: ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'],
+                locale: 'fr-FR'
+            },
+            autre: {
+                langue: 'Masau',
+                titre: '🙏 Losalio',
+                assignmentTitle: 'Loku misitelio',
+                currentLabel: 'Misitelio o ',
+                nextLabel: 'Misitelio o ',
+                prayerTitle: 'Misitelio o leinei masina',
+                dailyPrayer: 'Kua oki a leinei aso',
+                chooseMystery: 'Filifili se misitelio…',
+                emptyMessage: 'Misitelio o leinei masina',
+                fruit: 'Tou kole : ',
+                today: '📅 Leinei aso :',
+                mois: [
+                    'Sanualio', 'Fepualio', 'Masio', 'Apelili', 'Maio', 'Sunio',
+                    'Sulio', 'Akusito', 'Sepetepeli', 'Oketopeli', 'Novepeli', 'Tesepeli'
+                ],
+                jours: ['Monite', 'Felia tolu', 'Felia fa', 'Felia lima', 'Felia ono', 'Aso tonaki', 'Aso tapu'],
+                locale: 'fr-FR'
+            }
+        };
+
+        const traductionsAutre = {
+            joyeux: {
+                titre: 'Misitelio Fakafiafia',
+                elements: {
+                    j1: { num: 'Uluaki Misitelio', texte: 'Ko le ifo mai ole Aselo a le Aliki o fetapa kia Malia', fruit: 'le agamalu' },
+                    j2: { num: 'Lua Misitelio', texte: 'Ko le feilogaki a Malia kia Elisapeta', fruit: 'le aga \'alofa ki kaiga' },
+                    j3: { num: 'Tolu Misitelio', texte: 'Ko le fanau\'i o SESU ile falemanu i petele\'emi', fruit: 'le aga fia mativa' },
+                    j4: { num: 'Fa Misitelio', texte: 'Ko le momoli o SESU mole fakatapu o Malia', fruit: 'le aga patigaofie' },
+                    j5: { num: 'Lima Misitelio', texte: 'Ko le puli o SESU mo lona toe ma\'ua mei selusami', fruit: 'le toe sakili o SESU ia Malia pēkā puli ile agasala' }
+                }
+            },
+            lumineux: {
+                titre: 'Misitelio o le Malama',
+                elements: {
+                    l1: { num: 'Uluaki Misitelio', texte: 'Ko le papitema o SESU i solotane', fruit: 'le mulimuli tu\'uma\'u kia SESU' },
+                    l2: { num: 'Lua Misitelio', texte: 'Kole uluaki milakulo a SESU i le fai avaga i kana i kalilea', fruit: 'le patigaofie o le Tui tu\'ma\'u kia SESU' },
+                    l3: { num: 'Tolu Misitelio', texte: 'Kole puleaga sau o le ATUA', fruit: 'le agatonu kil ana folafola mo le toe tafoki kile ATUA' },
+                    l4: { num: 'Fa Misitelio', texte: 'Kole fetogi o le fofoga taputapu o SESU', fruit: 'le fiafia o le ma\'uli fakatasi mo le ATUA' },
+                    l5: { num: 'Lima Misitelio', texte: 'Kole fakatu\'u e SESU o le sakalameta o le Eukalisitea', fruit: 'le afa tu\'uma\'u o le tumutumu mo le matapuna o le ma\'uli fakakilisiteano ma\'oki' }
+                }
+            },
+            douloureux: {
+                titre: 'Misitelio Fakamamae',
+                elements: {
+                    d1: { num: 'Uluaki Misitelio', texte: 'Kole mamae o SESU i oliveto', fruit: 'le loto vesi\'a ki agasala' },
+                    d2: { num: 'Lua Misitelio', texte: 'Ko le sāsā o SESU i le pou', fruit: 'le loto fakasemala ma\'oki' },
+                    d3: { num: 'Tolu Misitelio', texte: 'Ko le teki o le pālā talatala ki le ulu taputapu o SESU', fruit: 'le kātaki i fakamele kesekese' },
+                    d4: { num: 'Fa Misitelio', texte: 'Kole amo o le koluse e SESU ki kalevalio', fruit: 'le loto kataki i mamae' },
+                    d5: { num: 'Lima Misitelio', texte: 'Ko le tutuki o SESU kile koluse', fruit: 'le loto alofa kia SESU mo Malia' }
+                }
+            },
+            glorieux: {
+                titre: 'Misitelio Fakakololia',
+                elements: {
+                    g1: { num: 'Uluaki Misitelio', texte: 'Kole tu\'ake o sesu mei le mate', fruit: 'le ma\'uli ma\'oki mei le \'agasala' },
+                    g2: { num: 'Lua Misitelio', texte: 'Ko le sa\'ele ake o SESU ki selo', fruit: 'le loto oli ki selo' },
+                    g3: { num: 'Tolu Misitelio', texte: 'Ko le ifo mai o le laumalie ma\'oki\'oki', fruit: 'le loto me\'a mo ma\'opo\'opo' },
+                    g4: { num: 'Fa Misitelio', texte: 'Ko le asopesio o Malia le avake o Malia ki selo', fruit: 'le kalasia o le mate agatonu' },
+                    g5: { num: 'Lima Misitelio', texte: 'Ko le ifo mai o le laumalie ma\'oki\'oki', fruit: 'le loto alofa mo le fanaki ma\'oki kia Malia' }
+                }
+            }
+        };
+ 
+        let langueActuelle = localStorage.getItem('langue_interface') === 'autre' ? 'autre' : 'fr';
+        const cleAffectation = mois => 'mystere_mois_' + mois;
+        const clePriere = (date, id) => 'priere_' + date + '_' + id;
+ 
+        function textesMystere(mystere) {
+            if (langueActuelle === 'fr') return mystere;
+            const traduction = traductionsAutre[mystere.id[0] === 'j' ? 'joyeux'
+                : mystere.id[0] === 'l' ? 'lumineux'
+                    : mystere.id[0] === 'd' ? 'douloureux' : 'glorieux'].elements[mystere.id];
+            return { ...mystere, ...traduction };
+        }
+ 
+        function obtenirMystere(id) {
+            for (const [cleGroupe, groupe] of Object.entries(banqueRosaire)) {
+                const mystere = groupe.elements.find(element => element.id === id);
+                if (mystere) {
+                    const mystereTraduit = textesMystere(mystere);
+                    return {
+                        ...mystereTraduit,
+                        titreGroupe: langueActuelle === 'fr' ? groupe.titre : traductionsAutre[cleGroupe].titre
+                    };
+                }
+            }
+            return null;
+        }
+ 
+        function remplirSelecteur(selecteur, mystereSelectionne) {
+            const textes = textesInterface[langueActuelle];
+            selecteur.replaceChildren();
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = textes.chooseMystery;
+            selecteur.appendChild(placeholder);
+ 
+            Object.entries(banqueRosaire).forEach(([cleGroupe, groupe]) => {
+                const optionsGroupe = document.createElement('optgroup');
+                optionsGroupe.label = langueActuelle === 'fr' ? groupe.titre : traductionsAutre[cleGroupe].titre;
+                groupe.elements.forEach(mystere => {
+                    const mystereTraduit = textesMystere(mystere);
+                    const option = document.createElement('option');
+                    option.value = mystere.id;
+                    option.textContent = mystereTraduit.num + ' — ' + mystereTraduit.texte.split(' (')[0];
+                    optionsGroupe.appendChild(option);
+                });
+                selecteur.appendChild(optionsGroupe);
+            });
+            selecteur.value = mystereSelectionne || '';
+        }
+ 
+        function afficherMystereDuMois(id, date) {
+            const textes = textesInterface[langueActuelle];
+            const affichage = document.getElementById('monthly-mystery');
+            const dailyLabel = document.getElementById('daily-prayer-label');
+            const dailyCheckbox = document.getElementById('daily-prayer');
+            affichage.replaceChildren();
+ 
+            const mystere = obtenirMystere(id);
+            dailyLabel.hidden = !mystere;
+            dailyCheckbox.checked = mystere ? localStorage.getItem(clePriere(date, id)) === 'true' : false;
+ 
+            if (!mystere) {
+                const message = document.createElement('p');
+                message.className = 'empty-message';
+                message.textContent = textes.emptyMessage;
+                affichage.appendChild(message);
+                return;
+            }
+ 
+            const carte = document.createElement('div');
+            carte.className = 'mystery-card';
+            const groupe = document.createElement('div');
+            groupe.className = 'mystery-num';
+            groupe.textContent = mystere.titreGroupe;
+            const numero = document.createElement('div');
+            numero.className = 'mystery-num';
+            numero.textContent = mystere.num;
+            const texte = document.createElement('div');
+            texte.className = 'mystery-text';
+            texte.textContent = mystere.texte;
+            const fruit = document.createElement('div');
+            fruit.className = 'mystery-fruit';
+            const libelleFruit = document.createElement('b');
+            libelleFruit.textContent = textes.fruit;
+            fruit.append(libelleFruit, document.createTextNode(mystere.fruit));
+            carte.append(groupe, numero, texte, fruit);
+            affichage.appendChild(carte);
+        }
+ 
+        function actualiserAffectations() {
+            const maintenant = new Date();
+            const moisActuel = `${maintenant.getFullYear()}-${String(maintenant.getMonth() + 1).padStart(2, '0')}`;
+            const moisSuivantDate = new Date(maintenant.getFullYear(), maintenant.getMonth() + 1, 1);
+            const moisSuivant = `${moisSuivantDate.getFullYear()}-${String(moisSuivantDate.getMonth() + 1).padStart(2, '0')}`;
+            const dateAujourdhui = `${moisActuel}-${String(maintenant.getDate()).padStart(2, '0')}`;
+            const textes = textesInterface[langueActuelle];
+            const formatMois = date => {
+                const annee = Number(date.slice(0, 4));
+                const indexMois = Number(date.slice(5, 7)) - 1;
+                return `${textes.mois[indexMois]} ${annee}`;
+            };
+            const selectActuel = document.getElementById('current-mystery');
+            const selectSuivant = document.getElementById('next-mystery');
+ 
+            document.documentElement.lang = langueActuelle === 'fr' ? 'fr' : 'und';
+            document.getElementById('language-label').textContent = textes.langue;
+            document.getElementById('language-select').value = langueActuelle;
+            document.querySelector('h1').textContent = textes.titre;
+            document.getElementById('assignment-title').textContent = textes.assignmentTitle;
+            document.getElementById('prayer-title').textContent = textes.prayerTitle;
+            document.querySelector('#daily-prayer-label span').textContent = textes.dailyPrayer;
+ 
+            const jourSemaine = textes.jours[maintenant.getDay()];
+            document.getElementById('info-jour').textContent =
+                `${textes.today} ${jourSemaine} ${maintenant.getDate()} ${textes.mois[maintenant.getMonth()]} ${maintenant.getFullYear()}`;
+            document.getElementById('current-month-label').textContent =
+                textes.currentLabel + ' ' + formatMois(moisActuel);
+            document.getElementById('next-month-label').textContent =
+                textes.nextLabel + ' ' + formatMois(moisSuivant);
+ 
+            remplirSelecteur(selectActuel, localStorage.getItem(cleAffectation(moisActuel)));
+            remplirSelecteur(selectSuivant, localStorage.getItem(cleAffectation(moisSuivant)));
+            afficherMystereDuMois(selectActuel.value, dateAujourdhui);
+ 
+            selectActuel.onchange = () => {
+                if (selectActuel.value) localStorage.setItem(cleAffectation(moisActuel), selectActuel.value);
+                else localStorage.removeItem(cleAffectation(moisActuel));
+                afficherMystereDuMois(selectActuel.value, dateAujourdhui);
+            };
+            selectSuivant.onchange = () => {
+                if (selectSuivant.value) localStorage.setItem(cleAffectation(moisSuivant), selectSuivant.value);
+                else localStorage.removeItem(cleAffectation(moisSuivant));
+            };
+ 
+            document.getElementById('daily-prayer').onchange = event => {
+                const id = selectActuel.value;
+                if (!id) return;
+                const cle = clePriere(dateAujourdhui, id);
+                if (event.currentTarget.checked) localStorage.setItem(cle, 'true');
+                else localStorage.removeItem(cle);
+            };
+        }
+ 
+        function initialiserApplication() {
+            document.getElementById('language-select').value = langueActuelle;
+            document.getElementById('language-select').addEventListener('change', event => {
+                langueActuelle = event.currentTarget.value;
+                localStorage.setItem('langue_interface', langueActuelle);
+                actualiserAffectations();
+            });
+            actualiserAffectations();
+            programmerActualisationQuotidienne();
+        }
+ 
+        function programmerActualisationQuotidienne() {
+            const maintenant = new Date();
+            const prochainMinuit = new Date(
+                maintenant.getFullYear(),
+                maintenant.getMonth(),
+                maintenant.getDate() + 1
+            );
+            window.setTimeout(() => {
+                actualiserAffectations();
+                programmerActualisationQuotidienne();
+            }, prochainMinuit.getTime() - maintenant.getTime());
+        }
+ 
+        window.addEventListener('focus', actualiserAffectations);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) actualiserAffectations();
+        });
+        window.addEventListener('DOMContentLoaded', initialiserApplication);
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            });
+        }
+    </script>
+</body>
+</html>
